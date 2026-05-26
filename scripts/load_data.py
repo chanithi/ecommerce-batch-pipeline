@@ -1,43 +1,121 @@
-from sqlalchemy import create_engine
 import pandas as pd
 
-# PostgreSQL connection
-engine = create_engine(
-    "postgresql://postgres@localhost:5432/ecommerce"
-)
+from sqlalchemy import text
 
-# Load customers
-customers_df = pd.read_csv("data/raw/customers.csv")
+from database import engine
+from logger import logger
 
-customers_df.to_sql(
-    "customers",
-    engine,
-    if_exists="append",
-    index=False
-)
 
-print("customers loaded successfully")
+def get_max_id(table_name, id_column):
 
-# Load products
-products_df = pd.read_csv("data/raw/products.csv")
+    try:
 
-products_df.to_sql(
-    "products",
-    engine,
-    if_exists="append",
-    index=False
-)
+        query = text(
+            f"SELECT COALESCE(MAX({id_column}), 0) FROM {table_name}"
+        )
 
-print("products loaded successfully")
+        with engine.connect() as conn:
 
-# Load orders
-orders_df = pd.read_csv("data/raw/orders.csv")
+            result = conn.execute(query)
 
-orders_df.to_sql(
-    "orders",
-    engine,
-    if_exists="append",
-    index=False
-)
+            max_id = result.scalar()
 
-print("orders loaded successfully")
+        logger.info(
+            f"{table_name} current max id: {max_id}"
+        )
+
+        return max_id
+
+    except Exception as e:
+
+        logger.error(
+            f"Error fetching max id for {table_name}: {e}"
+        )
+
+        return 0
+
+
+def incremental_load(
+    csv_path,
+    table_name,
+    id_column
+):
+
+    try:
+
+        # read csv
+        df = pd.read_csv(csv_path)
+
+        # get current max id
+        max_id = get_max_id(
+            table_name,
+            id_column
+        )
+
+        # filter new rows
+        new_rows = df[
+            df[id_column] > max_id
+        ]
+
+        if new_rows.empty:
+
+            logger.info(
+                f"No new rows for {table_name}"
+            )
+
+            print(
+                f"No new rows for {table_name}"
+            )
+
+            return
+
+        # load only new rows
+        new_rows.to_sql(
+            table_name,
+            engine,
+            if_exists="append",
+            index=False
+        )
+
+        logger.info(
+            f"{len(new_rows)} rows loaded into {table_name}"
+        )
+
+        print(
+            f"{len(new_rows)} rows loaded into {table_name}"
+        )
+
+    except Exception as e:
+
+        logger.error(
+            f"Error loading {table_name}: {e}"
+        )
+
+        print(
+            f"Error loading {table_name}"
+        )
+
+
+def main():
+
+    incremental_load(
+        "data/raw/customers.csv",
+        "customers",
+        "customer_id"
+    )
+
+    incremental_load(
+        "data/raw/products.csv",
+        "products",
+        "product_id"
+    )
+
+    incremental_load(
+        "data/raw/orders.csv",
+        "orders",
+        "order_id"
+    )
+
+
+if __name__ == "__main__":
+    main()
