@@ -2,8 +2,9 @@ import pandas as pd
 
 from sqlalchemy import text
 
-from database import engine
-from logger import logger
+# from scripts import database
+from scripts.database import engine
+from scripts.logger import logger
 
 
 def get_max_id(table_name, id_column):

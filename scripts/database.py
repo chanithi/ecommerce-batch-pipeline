@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine
-from config import *
+from scripts.config import *
 
 DATABASE_URL = (
     f"postgresql://{DB_USERNAME}:{DB_PASSWORD}"
