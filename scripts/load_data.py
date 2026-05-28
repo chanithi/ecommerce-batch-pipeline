@@ -120,3 +120,132 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# import pandas as pd
+
+# from sqlalchemy import text
+
+# from scripts.database import engine
+# from scripts.logger import logger
+
+
+# def get_max_id(table_name, id_column):
+
+#     try:
+
+#         query = text(
+#             f"SELECT COALESCE(MAX({id_column}), 0) FROM {table_name}"
+#         )
+
+#         with engine.connect() as conn:
+
+#             result = conn.execute(query)
+
+#             max_id = result.scalar()
+
+#         logger.info(
+#             f"{table_name} current max id: {max_id}"
+#         )
+
+#         return max_id
+
+#     except Exception as e:
+
+#         logger.error(
+#             f"Error fetching max id for {table_name}: {e}"
+#         )
+
+#         return 0
+
+
+# def incremental_load(
+#     csv_path,
+#     table_name,
+#     id_column
+# ):
+
+#     try:
+
+#         # Read CSV file
+#         df = pd.read_csv(csv_path)
+
+#         logger.info(
+#             f"Read {len(df)} rows from {csv_path}"
+#         )
+
+#         # Get current max ID from staging table
+#         max_id = get_max_id(
+#             table_name,
+#             id_column
+#         )
+
+#         # Filter only new rows
+#         new_rows = df[
+#             df[id_column] > max_id
+#         ]
+
+#         if new_rows.empty:
+
+#             logger.info(
+#                 f"No new rows found for {table_name}"
+#             )
+
+#             print(
+#                 f"No new rows for {table_name}"
+#             )
+
+#             return
+
+#         # Load new rows into staging table
+#         new_rows.to_sql(
+#             table_name,
+#             engine,
+#             if_exists="append",
+#             index=False
+#         )
+
+#         logger.info(
+#             f"{len(new_rows)} rows loaded into {table_name}"
+#         )
+
+#         print(
+#             f"{len(new_rows)} rows loaded into {table_name}"
+#         )
+
+#     except Exception as e:
+
+#         logger.error(
+#             f"Error loading {table_name}: {e}"
+#         )
+
+#         print(
+#             f"Error loading {table_name}"
+#         )
+
+
+# def main():
+
+#     # Load customers into staging
+#     incremental_load(
+#         "data/raw/customers.csv",
+#         "stg_customers",
+#         "customer_id"
+#     )
+
+#     # Load products into staging
+#     incremental_load(
+#         "data/raw/products.csv",
+#         "stg_products",
+#         "product_id"
+#     )
+
+#     # Load orders into staging
+#     incremental_load(
+#         "data/raw/orders.csv",
+#         "stg_orders",
+#         "order_id"
+#     )
+
+
+# if __name__ == "__main__":
+#     main()
